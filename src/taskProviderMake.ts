@@ -1,6 +1,6 @@
 
 import {
-    Task, TaskGroup, WorkspaceFolder, RelativePattern, ShellExecution, Uri,
+    Task, TaskGroup, WorkspaceFolder, ShellExecution, Uri,
     workspace, TaskProvider, TaskDefinition
 } from "vscode";
 import * as path from "path";
@@ -190,6 +190,18 @@ function isNormalTarget(target: string): boolean
     return true;
 }
 
+/**
+ * Split a Makefile command into target name and an optional depends on names.
+ */
+function parseTargetName(line: string) {
+    const tgtName = line.split(":")[0].trim();
+    const dependsName = line.substring(line.indexOf(":") + 1).trim();
+
+    return {
+        tgtName,
+        dependsName
+    }
+}
 
 async function findTargets(fsPath: string): Promise<StringMap>
 {
@@ -214,8 +226,7 @@ async function findTargets(fsPath: string): Promise<StringMap>
         if (line.length > 0 && !line.startsWith("\t") && !line.startsWith(" ") &&
             !line.startsWith("#") && !line.startsWith("$") && line.indexOf(":") > 0)
         {
-            const tgtName = line.substring(0, line.indexOf(":")).trim();
-            const dependsName = line.substring(line.indexOf(":") + 1).trim();
+            const {tgtName, dependsName} = parseTargetName(line);
             //
             // Don't include object targets
             //
